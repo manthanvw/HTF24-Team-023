@@ -1,9 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { type NextRequest, NextResponse } from "next/server";
-
+import { cookies } from "next/headers";
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Check if a user's logged in
   const {
@@ -12,6 +12,9 @@ export async function POST(req: NextRequest) {
 
   if (user) {
     await supabase.auth.signOut();
+    (await cookies()).delete("supabase.auth.token");
+
+    return NextResponse.json({ message: "Signed out successfully" });
   }
 
   revalidatePath("/", "layout");

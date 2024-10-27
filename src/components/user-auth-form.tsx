@@ -39,7 +39,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       const { data } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${location.origin}/auth/callback`,
+          emailRedirectTo: `${location.origin}/auth/callback?next=/chat1`,
         },
       })
       setStep("password")
@@ -80,10 +80,10 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${location.origin}/auth/v1/callback`,
+          redirectTo: `${location.origin}/auth/callback`,
         },
       })
-
+      console.log(data);
       if (error) {
         throw error
       }

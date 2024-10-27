@@ -1,12 +1,3 @@
-// src/lib/supabase.ts
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-export const createClientComponentClient = () =>
-  createClient(supabaseUrl, supabaseAnonKey);
-
 // middleware.ts
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
@@ -17,12 +8,42 @@ export async function middleware(req: NextRequest) {
   const supabase = createMiddlewareClient({ req, res });
 
   // Refresh session if expired - required for Server Components
-  await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // Get the current path
+  const path = req.nextUrl.pathname;
+
+  // Define public paths that don't require authentication
+  const isPublicPath =
+    path.startsWith("/auth/") ||
+    path === "/" ||
+    path === "/about" ||
+    path === "/contact";
+  // Add other public paths here
+
+  // Handle authentication
+  if (!session && !isPublicPath) {
+    // Redirect to login page if accessing protected route without session
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = "/auth/login";
+    // Store the original URL to redirect back after login
+    redirectUrl.searchParams.set("redirectedFrom", path);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Optional: Redirect logged-in users away from auth pages
+  if (session && path.startsWith("/auth/")) {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = "/dashboard";
+    return NextResponse.redirect(redirectUrl);
+  }
 
   return res;
 }
 
-// Specify which routes should be protected
+// Configuration for middleware matcher
 export const config = {
   matcher: [
     /*
