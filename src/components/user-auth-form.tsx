@@ -39,7 +39,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       const { data } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${location.origin}/auth/callback?next=/chat1`,
+          emailRedirectTo: `${location.origin}/auth/callback`,
         },
       })
       setStep("password")

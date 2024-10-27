@@ -43,14 +43,15 @@ const useTranslation = () => {
             }
           };
           initializeOnMount();
-      }, [translator]);
+      }, []);
   
       const initializeTranslator = useCallback(async (sourceLanguage, targetLanguage) => {
         try {
           setIsLoading(true);
           setError(null);
     
-          const languagePair = { sourceLanguage, targetLanguage };
+          const languagePair = { sourceLanguage: sourceLanguage, targetLanguage: targetLanguage };
+          // console.log("Initializing translator for language pair:", languagePair);
           const canTranslate = await translation.canTranslate(languagePair);
           let newTranslator;
     
@@ -61,9 +62,11 @@ const useTranslation = () => {
             } else {
               // The translator can be used after the model download.
               newTranslator = await translation.createTranslator(languagePair);
-              newTranslator.addEventListener("downloadprogress", (e) => {
-                console.log(e.loaded, e.total);
-              });
+              if (newTranslator.addEventListener) {
+                newTranslator.addEventListener("downloadprogress", (e) => {
+                  console.log(e.loaded, e.total);
+                });
+              }
               await newTranslator.ready;
             }
           } else {
@@ -88,9 +91,8 @@ const useTranslation = () => {
               translator.sourceLanguage !== sourceLanguage || 
               translator.targetLanguage !== targetLanguage) {
             const newTranslator = await initializeTranslator(sourceLanguage, targetLanguage);
-            if (!newTranslator) return text; // If translation fails, return original text
+            if (!newTranslator) return "Could not do it: " + text; // If translation fails, return original text
           }
-          await new Promise(resolve => setTimeout(resolve, 1000));
           const translatedText = await translator.translate(text);
           return translatedText;
         } catch (err) {
@@ -126,18 +128,6 @@ const ChatInterface = () => {
         };
         fetchData();
       }, []);
-
-
-    //   useEffect(() => {
-    //     const fetchData = async () => {
-    //       if (activeChat) {
-    //         // listenForMessages();
-    //       }
-    //     };
-    //     fetchData();
-    //   }, [activeChat]);
-    
-
 
     const fetchUsers = async () => {
         try {
@@ -217,45 +207,55 @@ const ChatInterface = () => {
     // };
      // Handle sending messages
      const handleSendMessage = async () => {
-        if (!message.trim() || !activeChat) return;
-      
-        // Translate message before sending
-        let translatedMessage = message;
-        if (currentLanguage !== "en") {
-          translatedMessage = await translateText(message, "en", currentLanguage);
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const { data, error } = await supabase
-          .from("messages")
-          .insert([
-            {
-              sender_id: user,
-              receiver_id: activeChat.id,
-              content: translatedMessage,
-            },
-          ])
-          .select("id");
-      
-        if (error) {
-          console.error("Error sending message:", error);
-          return;
-        }
-      
-        const newMessageId = data[0].id;
-      
-        // Update UI with the translated message
-        setMessage(""); // Clear input
-        setMessages((prevMessages) => [
-          ...prevMessages,
+      if (!message.trim() || !activeChat) return;
+  
+      // Translate message before sending
+      let translatedMessage = message;
+      if (currentLanguage !== "en") {
+        translatedMessage = await translateText(message, "en", currentLanguage)
+        .then((text) => {
+          console.log("Translated message:", text);
+          return text;
+        })
+        .catch((err) => {
+          console.error("Translation error:", err);
+          return message; // Return original message if translation fails
+        });
+      }
+  
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay if needed
+      const { data, error } = await supabase
+        .from("messages")
+        .insert([
           {
-            id: newMessageId,
             sender_id: user,
             receiver_id: activeChat.id,
             content: translatedMessage,
-            created_at: new Date().toISOString(),
           },
-        ]);
-      };
+        ])
+        .select("id");
+  
+      if (error) {
+        console.error("Error sending message:", error);
+        return;
+      }
+  
+      const newMessageId = data[0].id;
+  
+      // Update UI with the translated message
+      setMessage(""); // Clear input
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          id: newMessageId,
+          sender_id: user,
+          receiver_id: activeChat.id,
+          content: translatedMessage,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+  };
+  
       
 // Modified message rendering function
  
