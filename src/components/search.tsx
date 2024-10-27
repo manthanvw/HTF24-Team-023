@@ -43,23 +43,25 @@ export default function UserSearch() {
   };
 
   return (
-    <div className="max-w-md mx-auto">
-      <Input
-        type="text"
-        placeholder="Search users..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="mb-4"
-      />
-      <Button onClick={handleSearch} disabled={isLoading}>
-        {isLoading ? "Searching..." : "Search"}
-      </Button>
+    <div className="container mx-auto p-4">
+      <div className="flex flex-col items-center">
+        <Input
+          type="text"
+          placeholder="Search users..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="mb-4 w-full max-w-md"
+        />
+        <Button onClick={handleSearch} disabled={isLoading} className="w-full max-w-md">
+          {isLoading ? "Searching..." : "Search"}
+        </Button>
+      </div>
 
       {users.length > 0 && (
-        <ul className="mt-4">
+        <ul className="mt-4 mx-auto w-full max-w-md">
           {users.map((user) => (
             <li key={user.id} className="border-b py-2">
-              {user["Full Name"]} 
+              {user["Full Name"]}
             </li>
           ))}
         </ul>
