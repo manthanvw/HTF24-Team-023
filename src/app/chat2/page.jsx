@@ -22,6 +22,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import UserSearch from '@/components/search';
 // Custom hook for translation functionality
 
 const supabaseUrl = 'https://vnndbhnaytdphummfyeq.supabase.co';
@@ -89,7 +90,7 @@ const useTranslation = () => {
             const newTranslator = await initializeTranslator(sourceLanguage, targetLanguage);
             if (!newTranslator) return text; // If translation fails, return original text
           }
-    
+          await new Promise(resolve => setTimeout(resolve, 1000));
           const translatedText = await translator.translate(text);
           return translatedText;
         } catch (err) {
@@ -194,7 +195,7 @@ const ChatInterface = () => {
             setConversations(Object.values(uniqueUsers));
             data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             setAllMessages(data)
-            console.log(data)
+            // console.log(data)
         }
     };
     
@@ -223,7 +224,7 @@ const ChatInterface = () => {
         if (currentLanguage !== "en") {
           translatedMessage = await translateText(message, "en", currentLanguage);
         }
-      
+        await new Promise(resolve => setTimeout(resolve, 1000));
         const { data, error } = await supabase
           .from("messages")
           .insert([
@@ -256,17 +257,6 @@ const ChatInterface = () => {
         ]);
       };
       
-
-  const translateChat = async () => {
-    if (!activeChat) return;
-    
-    const translatedText = await translateText(
-        message,
-        'en', // Assuming original messages are in English
-        currentLanguage
-    ).then(translatedText =>setMessage(translatedText));
-    
-  };
 // Modified message rendering function
  
 
@@ -295,8 +285,8 @@ const languages =  [
   const handleChatSelect = (chat) => {
       setActiveChat(chat);
       setIsSidebarOpen(false);
-      console.log(allMessages)
-      console.log(chat);
+    //   console.log(allMessages)
+    //   console.log(chat);
     const chatMessages = allMessages.filter(
       (msg) => msg.sender_id === chat.id || msg.receiver_id === chat.id
     );
@@ -430,16 +420,31 @@ const languages =  [
 
 // Sidebar Content Component
 const SidebarContent = ({ conversations, activeChat, onChatSelect }) => (
-    <div className="p-6">
-      <h3 className="text-lg font-semibold">Conversations</h3>
-      <ul className="space-y-4 mt-4">
-        {conversations.map((chat) => (
-          <li key={chat.id} className={`cursor-pointer ${activeChat?.id === chat.id ? "font-semibold text-blue-600" : "text-black"}`} onClick={() => onChatSelect(chat)}>
-            {chat['Full Name'] || chat.username}
-          </li>
-        ))}
-      </ul>
+    <div className="h-full flex flex-col bg-white">
+    <div className="h-16 flex items-center px-6 shadow-sm">
+      <h1 className="text-xl font-semibold text-black">Chats</h1>
     </div>
+    <ScrollArea className="flex-1">
+    <UserSearch/>
+      <div className="p-3">
+        {conversations.map((chat) => (
+          <button
+            key={chat.id}
+            onClick={() => onChatSelect(chat)}
+            className={`w-full p-3 rounded-xl flex items-center gap-3 transition-colors mb-1
+              ${activeChat?.id === chat.id ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
+          >
+            <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+              <MessageSquare className="h-5 w-5 text-gray-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <div className="font-medium text-[15px]">{chat['Full Name']}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </ScrollArea>
+  </div>
   );
   
 
